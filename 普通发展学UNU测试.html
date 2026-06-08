@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>UNU社科适配度测试 | 雷达图版 · 联合国大学研究所推荐</title>
+    <!-- 引入 Chart.js 用于绘制雷达图 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f0f4fa 0%, #e2eaf4 100%);
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            padding: 1.5rem 1rem;
+            color: #1a2c3e;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .test-wrapper {
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .test-header {
+            background: #1e3a5f;
+            color: white;
+            padding: 1.8rem 2rem;
+            text-align: center;
+        }
+
+        .test-header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .test-header p {
+            opacity: 0.85;
+            margin-top: 0.3rem;
+        }
+
+        .progress-area {
+            padding: 1rem 2rem 0.5rem;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .progress-bar-container {
+            background: #e2e8f0;
+            border-radius: 30px;
+            height: 8px;
+        }
+
+        .progress-fill {
+            background: #2c7da0;
+            width: 0%;
+            height: 100%;
+            border-radius: 30px;
+            transition: width 0.2s;
+        }
+
+        .q-counter {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .question-card {
+            padding: 2rem 2rem 1.8rem;
+        }
+
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.8rem;
+            line-height: 1.3;
+            color: #1a3a52;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+            margin-bottom: 2rem;
+        }
+
+        .option {
+            background: #f8fafc;
+            border: 1.5px solid #dce5ef;
+            border-radius: 1.2rem;
+            padding: 0.9rem 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .option:hover {
+            background: #eef3fc;
+            border-color: #8bb5d6;
+            transform: translateX(4px);
+        }
+
+        .option.selected {
+            background: #e1f0fa;
+            border-color: #2c7da0;
+            box-shadow: 0 2px 8px rgba(44,125,160,0.15);
+        }
+
+        .opt-prefix {
+            font-weight: 800;
+            background: #cbdde9;
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 30px;
+            color: #1e3a5f;
+        }
+
+        .option.selected .opt-prefix {
+            background: #2c7da0;
+            color: white;
+        }
+
+        .opt-text {
+            flex: 1;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        button {
+            background: #eef2f6;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+
+        button.primary {
+            background: #1e3a5f;
+            color: white;
+        }
+
+        button.primary:hover {
+            background: #0f2c44;
+            transform: scale(0.98);
+        }
+
+        button.secondary:hover {
+            background: #dfe6ef;
+        }
+
+        /* 结果区域：雷达图 + 卡片样式微调 */
+        .result-area {
+            padding: 2rem;
+            background: #fefef9;
+            border-top: 2px solid #e2edf2;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 1.8rem;
+            padding: 1.8rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s;
+        }
+
+        .result-badge {
+            background: #2c7da0;
+            display: inline-block;
+            color: white;
+            border-radius: 40px;
+            padding: 0.25rem 1.2rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .result-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #1f5068;
+            line-height: 1.3;
+        }
+
+        .result-sub {
+            font-size: 1rem;
+            color: #4a6f8f;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .profile-box {
+            background: #f2f6fb;
+            padding: 1.2rem;
+            border-radius: 1.2rem;
+            margin: 1.2rem 0;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            border-left: 6px solid #2c7da0;
+            white-space: pre-line;
+        }
+
+        /* 雷达图容器 + 得分表双栏布局 */
+        .radar-score-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin: 1.5rem 0 1rem;
+        }
+
+        .radar-container {
+            flex: 1.2;
+            min-width: 260px;
+            background: #ffffff;
+            border-radius: 1.2rem;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            border: 1px solid #e9edf2;
+        }
+
+        .radar-container canvas {
+            max-height: 320px;
+            width: 100%;
+        }
+
+        .score-wrapper {
+            flex: 0.9;
+            min-width: 240px;
+        }
+
+        .score-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            background: #fdfdfd;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .score-table td,
+        .score-table th {
+            padding: 0.6rem 0.4rem;
+            border-bottom: 1px solid #e9edf2;
+        }
+
+        .score-table th {
+            text-align: left;
+            font-weight: 700;
+            color: #1e3a5f;
+            background: #f0f4f9;
+        }
+
+        /* 高亮最高分行 (颜色微调：柔和琥珀色) */
+        .score-table tr.highest-score {
+            background: #fff1e0;
+            font-weight: 600;
+            border-radius: 8px;
+        }
+        .score-table tr.highest-score td:first-child {
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+        .score-table tr.highest-score td:last-child {
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        .score-number {
+            font-weight: 700;
+            color: #2c7da0;
+        }
+
+        .reset-btn {
+            text-align: center;
+            margin-top: 1.8rem;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #6b8cae;
+            padding: 1rem;
+        }
+
+        @media (max-width: 780px) {
+            .radar-score-row {
+                flex-direction: column;
+            }
+            .result-title {
+                font-size: 1.4rem;
+            }
+            .question-text {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="test-wrapper" id="app">
+        <div class="test-header">
+            <h1>📡 UNU 适配度测试 · 雷达图版</h1>
+            <p>联合国大学研究所推荐 | 社科大学生版 | 可视化分析</p>
+        </div>
+
+        <div id="quizPanel">
+            <div class="progress-area">
+                <div class="progress-bar-container">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="q-counter"><span id="currentQNum">第1题</span><span>/18</span></div>
+            </div>
+            <div class="question-card">
+                <div class="question-text" id="questionText"></div>
+                <div class="options" id="optionsContainer"></div>
+                <div class="nav-buttons">
+                    <button id="prevBtn" class="secondary">◀ 上一题</button>
+                    <button id="nextBtn" class="primary">下一题 ▶</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultPanel" style="display: none;" class="result-area"></div>
+    </div>
+    <footer>基于18题规则 · 雷达图展示适配倾向 · 最高分行高亮显示</footer>
+</div>
+
+<script>
+    // ---------- 机构列表 + 中文名称 ----------
+    const INSTITUTES = [
+        "UNU-WIDER", "UNU-CPR", "UNU-EHS", "UNU-Macau",
+        "UNU-MERIT", "UNU-IAS", "UNU-INRA", "UNU-IIGH"
+    ];
+
+    const CN_NAMES = {
+        "UNU-WIDER": "联合国大学世界发展经济学研究所",
+        "UNU-CPR": "联合国大学政策研究中心",
+        "UNU-EHS": "联合国大学环境与人类安全研究所",
+        "UNU-Macau": "联合国大学澳门研究所",
+        "UNU-MERIT": "联合国大学马斯特里赫特创新与技术经济研究所",
+        "UNU-IAS": "联合国大学可持续发展高等研究所",
+        "UNU-INRA": "联合国大学非洲自然资源研究所",
+        "UNU-IIGH": "联合国大学全球健康研究所"
+    };
+
+    function getDisplayName(engId) {
+        return `${engId} · ${CN_NAMES[engId] || engId}`;
+    }
+
+    // 适配画像
+    const PROFILES = {
+        "UNU-WIDER": "🏛️ 严谨的量化发展经济学家\n\n你对数字敏感、相信因果推断的力量。喜欢用微观调查数据回答贫困、不平等、援助有效性等问题。不畏惧繁琐的数据清洗，欣赏Angrist和Imbens的实证方法，希望研究被顶级期刊或世界银行政策简报引用。在团队中是主动检查代码稳健性的人，习惯说“在X条件下，Y政策平均提升了Z%的福利”。能够接受较长的研究周期，相信好证据需要时间沉淀。适合热爱计量经济学、对贫困议题有持久关注的你。",
+        "UNU-CPR": "🌐 穿梭于外交与学术之间的政策操盘手\n\n你对权力运作和制度设计天生敏感，能快速读懂决议草案的弦外之音。享受高强度、高模糊性工作，擅长将复杂研究翻译成外交官语言。追求在现有证据下最可行的判断，希望离联合国决策核心更近。适合希望在纽约/日内瓦参与全球治理讨论、对地缘政治有直觉的你。",
+        "UNU-EHS": "🌍 气候时代的风险叙事者\n\n你关注气候变化，更关心洪水发生时谁最无力撤离。使用GIS制作风险地图，也用访谈理解社区适应策略，是定量与定性双栖者。认同“脆弱性是社会建构的”，愿意前往孟加拉国或萨赫勒地区，为联合国减灾署撰写政策指引。适合对环境正义、气候韧性有强烈使命感的你。",
+        "UNU-Macau": "💻 用代码书写可持续发展的数字人文主义者\n\n你会写Python，也读过福柯。相信算法可以改善公共服务，也警惕偏见被编码进系统。喜欢将社会理论转化为算法约束，从非结构化数据中提取政策洞见。愿意与工程师、律师跨界合作。适合对数字技术与社会交叉充满热情，具备基础编程或快速学习意愿的你。",
+        "UNU-MERIT": "⚙️ 创新生态的制度设计师\n\n你关心为什么有些国家能持续创新而有些不能。擅长面板数据分析和创新调查，对“开放式创新”“吸收能力”如数家珍。喜欢为欧盟或非盟设计科技政策框架，享受跨国协调。适合对科技政策、创新体系、劳动力市场转型感兴趣的你。",
+        "UNU-IAS": "🍃 可持续性的整合者与沟通者\n\n你有系统思维的天赋，能把生物多样性、循环经济、能源转型串联成连贯叙事。擅长组织多方利益工作坊，是“翻译者”和“连接者”。对里山倡议、多利益相关方对话有热情，愿意深度嵌入日本可持续发展网络。适合有一定日语基础、享受跨领域协调的你。",
+        "UNU-INRA": "🌿 扎根非洲的资源治理实践者\n\n你的心在非洲，愿意长住阿克拉与加纳矿业部门对话。理解“资源诅咒”是具体的历史政治过程。具备项目设计和培训能力，愿意帮助非洲国家建立数据监测系统。对能力建设付诸行动，适合对非洲发展有长期承诺的你。",
+        "UNU-IIGH": "❤️ 健康不平等的性别敏感分析师\n\n你看待健康的视角与众不同：追问为什么女性承担更多无酬照护劳动？认同全球健康是权力问题。擅长批判性政策分析与混合方法，愿意与民间组织合作并向世卫提交政策建议。适合对健康中社会与性别不平等有强烈研究兴趣的你。"
+    };
+
+    let scores = Object.fromEntries(INSTITUTES.map(i => [i, 0]));
+    let userAnswers = new Array(18).fill(null);
+    let currentIndex = 0;
+    let radarChart = null; // 存储雷达图实例
+
+    // ---------- 题目数据 ----------
+    const questions = [
+        { text: "你的核心学科背景更接近以下哪一类？", options: ["A. 经济学 / 公共政策 / 发展研究", "B. 政治学 / 国际关系 / 法学", "C. 社会学 / 人类学 / 地理学 / 环境研究", "D. 传播学 / 科技与社会（STS）/ 创新研究"] },
+        { text: "在研究方法上，你更擅长或更倾向于使用哪种工具？", options: ["A. 计量回归、微观数据清洗（Stata / R / Python）", "B. 案例比较、政策文本分析、访谈", "C. 地理信息系统（GIS）或空间分析", "D. 问卷设计、统计描述（SPSS）或质性分析（NVivo）"] },
+        { text: "你希望未来的工作更接近以下哪种状态？", options: ["A. 产出严谨的学术论文与政策简报", "B. 直接为联合国总部或各国政府提供建议", "C. 参与技术开发，将AI或数据应用于社会问题", "D. 组织会议、培训、资助项目或跨国合作"] },
+        { text: "你更关注以下哪类议题？", options: ["A. 贫困、不平等、债务、贸易与发展融资", "B. 冲突、维和、多边治理、数字主权", "C. 气候变化、灾害、移民、生物多样性", "D. 技术伦理、平台经济、健康不平等、性别"] },
+        { text: "你对“全球南方”的态度更符合哪一项？", options: ["A. 希望通过量化研究揭示结构性不平等", "B. 希望直接参与非洲或拉美的能力建设项目", "C. 更关注北方政策如何影响南方，不一定需要长驻当地", "D. 没有特别的地域偏向，更看重议题本身"] },
+        { text: "你掌握或愿意重点提升的第二外语是？", options: ["A. 日语", "B. 西班牙语", "C. 法语", "D. 暂无或只接受英语工作环境"] },
+        { text: "你更适应哪种工作节奏与环境？", options: ["A. 偏学术型，可远程协作，产出周期较长", "B. 偏政策型，节奏快，位于纽约/日内瓦/波恩等国际城市", "C. 偏项目型，需要跨时区协调多国合作伙伴", "D. 偏技术型，以代码或数据分析为主，团队规模较小"] },
+        { text: "你未来的职业优先级更接近于？", options: ["A. 博士深造 → 高校或研究机构", "B. 联合国系统内政策岗位", "C. 国际发展实务（NGO/基金会/双边机构）", "D. 科技公司或咨询公司的国际发展部门"] },
+        { text: "如果参与实地调研，你更愿意去？", options: ["A. 非洲（如加纳、肯尼亚）", "B. 东南亚或南亚（如马来西亚、孟加拉国）", "C. 拉美（如委内瑞拉、巴西）", "D. 欧洲或北美发达地区"] },
+        { text: "你认为自己最突出的个人特质是？", options: ["A. 严谨细致，对数据有耐心", "B. 表达力强，善于沟通与政策游说", "C. 适应力强，能在资源受限的环境中推进工作", "D. 创新思维，喜欢用新技术解决旧问题"] },
+        { text: "在研究中遇到“数据不完美”时，你通常的做法是？", options: ["A. 尝试多种统计方法进行稳健性检验，并如实报告局限", "B. 寻找替代数据源或调整研究问题", "C. 结合定性访谈或案例来弥补数据的不足", "D. 提出可操作的政策方向而非精确估计"] },
+        { text: "你更希望自己的研究成果最终以哪种形式被使用？", options: ["A. 发表在同行评议期刊上", "B. 被联合国秘书长报告或安理会采纳", "C. 被某个发展中国家部委作为政策参考", "D. 开发成开源工具、数据集或可视化平台"] },
+        { text: "对于“政策建议与学术审慎之间的张力”，你的态度更接近？", options: ["A. 优先学术严谨，政策应用由决策者判断", "B. 愿意给出明确建议，哪怕有一定简化", "C. 帮助政策制定者理解证据的不确定性", "D. 认为UNU的意义就是产出可用建议，学术规范可让步"] },
+        { text: "你对“跨学科合作”的真实感受是？", options: ["A. 很享受，能从其他学科获得新视角", "B. 可以接受，但需确保经济学/政治学方法不被稀释", "C. 有些挑战，但理解这是解决复杂问题的必要路径", "D. 更喜欢在单一学科深耕，跨学科更多是为了申请经费"] },
+        { text: "如果让你参与一个UNU项目，你最不能接受的工作内容是？", options: ["A. 大量重复性的数据清洗或文献编码工作", "B. 撰写行政报告或会议纪要", "C. 需要频繁跨时区开会，打乱个人作息", "D. 研究结论因政治敏感性被要求弱化或修改"] },
+        { text: "你对“技术解决方案主义”的态度是？", options: ["A. 持批判态度，社会结构常被忽略", "B. 有条件支持，需要配套治理机制", "C. 积极支持，只要经过充分测试评估", "D. 不太关心，不是我的主要视角"] },
+        { text: "你更希望你的UNU主管或导师具备哪种特质？", options: ["A. 深厚的学术功底，指导发表高水平论文", "B. 丰富的联合国网络资源，打开政策圈人脉", "C. 明确的项目管理能力，任务边界清晰", "D. 对全球南方的深刻理解，支持实地调研"] },
+        { text: "你对工作地点的偏好顺序是？（最偏好的一项）", options: ["A. 欧洲（赫尔辛基/波恩/马斯特里赫特）", "B. 北美（纽约/华盛顿特区）", "C. 亚洲（东京/澳门/吉隆坡）", "D. 非洲或拉美（阿克拉/加拉加斯）"] }
+    ];
+
+    // 计分规则函数 getScoreDeltas (保持完整)
+    function getScoreDeltas(qIndex, opt) {
+        if (!opt) return [];
+        let deltas = [];
+        switch (qIndex) {
+            case 0: if (opt === 'A') deltas = [["UNU-WIDER",1]]; else if (opt === 'B') deltas = [["UNU-CPR",1]]; else if (opt === 'C') deltas = [["UNU-EHS",1],["UNU-IAS",1]]; else if (opt === 'D') deltas = [["UNU-MERIT",1],["UNU-Macau",1]]; break;
+            case 1: if (opt === 'A') deltas = [["UNU-WIDER",1]]; else if (opt === 'B') deltas = [["UNU-CPR",1],["UNU-EHS",1],["UNU-IAS",1],["UNU-IIGH",1]]; else if (opt === 'C') deltas = [["UNU-EHS",1],["UNU-IAS",1]]; else if (opt === 'D') deltas = [["UNU-Macau",1],["UNU-MERIT",1]]; break;
+            case 2: if (opt === 'A') deltas = [["UNU-WIDER",1]]; else if (opt === 'B') deltas = [["UNU-CPR",1]]; else if (opt === 'C') deltas = [["UNU-Macau",1],["UNU-MERIT",1]]; else if (opt === 'D') deltas = [["UNU-IAS",1],["UNU-INRA",1],["UNU-IIGH",1]]; break;
+            case 3: if (opt === 'A') deltas = [["UNU-WIDER",1]]; else if (opt === 'B') deltas = [["UNU-CPR",1]]; else if (opt === 'C') deltas = [["UNU-EHS",1],["UNU-IAS",1]]; else if (opt === 'D') deltas = [["UNU-Macau",1],["UNU-MERIT",1],["UNU-IIGH",1]]; break;
+            case 4: if (opt === 'A') deltas = [["UNU-WIDER",1]]; else if (opt === 'B') deltas = [["UNU-INRA",1],["UNU-IIGH",1]]; else if (opt === 'C') deltas = [["UNU-CPR",1]]; else if (opt === 'D') deltas = [["UNU-Macau",1],["UNU-MERIT",1],["UNU-IAS",1]]; break;
+            case 5: if (opt === 'A') deltas = [["UNU-WIDER",1],["UNU-MERIT",1]]; else if (opt === 'B') deltas = [["UNU-IAS",1],["UNU-IIGH",1]]; else if (opt === 'C') deltas = [["UNU-INRA",1],["UNU-CPR",1]]; else if (opt === 'D') deltas = [["UNU-Macau",1],["UNU-EHS",1]]; break;
+            case 6: if (opt === 'A') deltas = [["UNU-WIDER",1]]; else if (opt === 'B') deltas = [["UNU-CPR",1]]; else if (opt === 'C') deltas = [["UNU-INRA",1],["UNU-IIGH",1]]; else if (opt === 'D') deltas = [["UNU-Macau",1],["UNU-MERIT",1]]; break;
+            case 7: if (opt === 'A') deltas = [["UNU-WIDER",1]]; else if (opt === 'B') deltas = [["UNU-CPR",1]]; else if (opt === 'C') deltas = [["UNU-IAS",1],["UNU-MERIT",1]]; else if (opt === 'D') deltas = [["UNU-INRA",1],["UNU-IIGH",1]]; break;
+            case 8: if (opt === 'A') deltas = [["UNU-INRA",1]]; else if (opt === 'B') deltas = [["UNU-IIGH",1]]; else if (opt === 'C') deltas = []; else if (opt === 'D') deltas = [["UNU-WIDER",1],["UNU-EHS",1],["UNU-CPR",1]]; break;
+            case 9: if (opt === 'A') deltas = [["UNU-WIDER",1]]; else if (opt === 'B') deltas = [["UNU-CPR",1]]; else if (opt === 'C') deltas = [["UNU-INRA",1],["UNU-IIGH",1],["UNU-EHS",1]]; else if (opt === 'D') deltas = [["UNU-Macau",1],["UNU-MERIT",1]]; break;
+            case 10: if (opt === 'A') deltas = [["UNU-WIDER",1],["UNU-MERIT",1]]; else if (opt === 'B') deltas = [["UNU-CPR",1]]; else if (opt === 'C') deltas = [["UNU-EHS",1],["UNU-IAS",1]]; else if (opt === 'D') deltas = [["UNU-Macau",1]]; break;
+            case 11: if (opt === 'A') deltas = [["UNU-WIDER",1]]; else if (opt === 'B') deltas = [["UNU-CPR",1]]; else if (opt === 'C') deltas = [["UNU-INRA",1],["UNU-IIGH",1]]; else if (opt === 'D') deltas = [["UNU-Macau",1],["UNU-MERIT",1]]; break;
+            case 12: if (opt === 'A') deltas = [["UNU-WIDER",1]]; else if (opt === 'B') deltas = [["UNU-CPR",1]]; else if (opt === 'C') deltas = [["UNU-EHS",1],["UNU-IIGH",1]]; else if (opt === 'D') deltas = []; break;
+            case 13: if (opt === 'A') deltas = INSTITUTES.map(i=>[i,1]); else if (opt === 'B') deltas = [["UNU-WIDER",1],["UNU-CPR",1]]; else if (opt === 'C') deltas = [["UNU-EHS",1],["UNU-IAS",1],["UNU-INRA",1],["UNU-IIGH",1]]; else if (opt === 'D') deltas = []; break;
+            case 14: if (opt === 'A') deltas = [["UNU-WIDER",-1],["UNU-Macau",-1]]; else if (opt === 'B') deltas = [["UNU-IAS",-1]]; else if (opt === 'C') deltas = []; else if (opt === 'D') deltas = [["UNU-CPR",-1]]; break;
+            case 15: if (opt === 'A') deltas = [["UNU-EHS",1],["UNU-IIGH",1],["UNU-WIDER",1]]; else if (opt === 'B') deltas = [["UNU-MERIT",1],["UNU-CPR",1]]; else if (opt === 'C') deltas = [["UNU-Macau",1]]; else if (opt === 'D') deltas = []; break;
+            case 16: if (opt === 'A') deltas = [["UNU-WIDER",1]]; else if (opt === 'B') deltas = [["UNU-CPR",1]]; else if (opt === 'C') deltas = [["UNU-Macau",1],["UNU-MERIT",1]]; else if (opt === 'D') deltas = [["UNU-INRA",1],["UNU-IIGH",1]]; break;
+            case 17: if (opt === 'A') deltas = [["UNU-WIDER",1],["UNU-EHS",1],["UNU-MERIT",1]]; else if (opt === 'B') deltas = [["UNU-CPR",1]]; else if (opt === 'C') deltas = [["UNU-IAS",1],["UNU-Macau",1]]; else if (opt === 'D') deltas = [["UNU-INRA",1],["UNU-IIGH",1]]; break;
+            default: break;
+        }
+        return deltas;
+    }
+
+    function recomputeScores() {
+        for (let inst of INSTITUTES) scores[inst] = 0;
+        for (let i = 0; i < userAnswers.length; i++) {
+            let ans = userAnswers[i];
+            if (ans) {
+                let deltas = getScoreDeltas(i, ans);
+                for (let [inst, val] of deltas) scores[inst] += val;
+            }
+        }
+    }
+
+    function getBestInst() {
+        let maxScore = -Infinity, best = [];
+        for (let inst of INSTITUTES) {
+            if (scores[inst] > maxScore) { maxScore = scores[inst]; best = [inst]; }
+            else if (scores[inst] === maxScore) best.push(inst);
+        }
+        if (best.length === 1) return { primary: best[0], reason: PROFILES[best[0]] };
+        let q18 = userAnswers[17];
+        let priority = q18 === 'A' ? ["UNU-WIDER","UNU-EHS","UNU-MERIT"] : (q18 === 'B' ? ["UNU-CPR"] : (q18 === 'C' ? ["UNU-IAS","UNU-Macau"] : ["UNU-INRA","UNU-IIGH"]));
+        let found = priority.find(p => best.includes(p));
+        if (found) return { primary: found, reason: PROFILES[found] };
+        return { primary: null, multiple: best, reason: "您可能适合多个方向，适配度并列最高。" };
+    }
+
+    // 渲染雷达图
+    function renderRadarChart() {
+        const ctx = document.getElementById('radarCanvas')?.getContext('2d');
+        if (!ctx) return;
+        if (radarChart) radarChart.destroy();
+        radarChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: INSTITUTES.map(i => i.replace('UNU-', '')),
+                datasets: [{
+                    label: '适配得分',
+                    data: INSTITUTES.map(i => scores[i]),
+                    backgroundColor: 'rgba(44, 125, 160, 0.2)',
+                    borderColor: '#2c7da0',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#1e3a5f',
+                    pointBorderColor: '#fff',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: { r: { beginAtZero: true, ticks: { stepSize: 2, backdropColor: 'transparent' }, grid: { color: '#dce5ef' } } },
+                plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} 分` } }, legend: { position: 'top' } }
+            }
+        });
+    }
+
+    // 显示结果页面（带雷达图和得分表）
+    function showResult() {
+        const rec = getBestInst();
+        const maxScoreVal = Math.max(...INSTITUTES.map(i => scores[i]));
+        let rows = INSTITUTES.map(inst => {
+            let isHighest = scores[inst] === maxScoreVal && maxScoreVal > -Infinity;
+            return `<tr class="${isHighest ? 'highest-score' : ''}">
+                        <td><strong>${inst}</strong><br><span style="font-size:0.75rem; color:#5c7f9e;">${CN_NAMES[inst]}</span></td>
+                        <td style="text-align:center"><span class="score-number">${scores[inst]}</span> 分</td>
+                    </tr>`;
+        }).join('');
+
+        let primaryHtml = "";
+        if (rec.primary) {
+            primaryHtml = `<div class="result-title">🎯 ${getDisplayName(rec.primary)}</div>
+                           <div class="result-sub">${CN_NAMES[rec.primary]}</div>
+                           <div class="profile-box">✨ 适配画像<br/>${rec.reason}</div>`;
+        } else {
+            primaryHtml = `<div class="result-title">🤝 多重匹配</div>
+                           <div class="profile-box">${rec.reason}<br/>并列机构: ${rec.multiple.map(m => getDisplayName(m)).join("、")}</div>`;
+        }
+
+        const resultHtml = `
+            <div class="result-card">
+                <div class="result-badge">📡 雷达图分析 · 最佳匹配</div>
+                ${primaryHtml}
+                <div class="radar-score-row">
+                    <div class="radar-container">
+                        <canvas id="radarCanvas" width="400" height="300" style="width:100%; height:auto; max-width:400px; margin:0 auto; display:block;"></canvas>
+                        <p style="text-align:center; font-size:0.7rem; margin-top:8px; color:#4f6f8f;">⚡ 各研究所适配得分雷达图</p>
+                    </div>
+                    <div class="score-wrapper">
+                        <table class="score-table">
+                            <thead><tr><th>研究所 (中英对照)</th><th>得分</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="reset-btn"><button id="resetTestBtn" class="primary">⟳ 重新测试</button></div>
+            </div>
+        `;
+        document.getElementById("resultPanel").innerHTML = resultHtml;
+        document.getElementById("quizPanel").style.display = "none";
+        document.getElementById("resultPanel").style.display = "block";
+        renderRadarChart();
+        document.getElementById("resetTestBtn")?.addEventListener("click", resetTest);
+    }
+
+    function finishQuiz() {
+        if (userAnswers.some(a => a === null)) { alert("请完成所有题目"); return; }
+        recomputeScores();
+        showResult();
+    }
+
+    // 问卷交互逻辑
+    function renderCurrent() {
+        let q = questions[currentIndex];
+        document.getElementById("questionText").innerText = q.text;
+        let container = document.getElementById("optionsContainer");
+        container.innerHTML = "";
+        let saved = userAnswers[currentIndex];
+        q.options.forEach((opt, idx) => {
+            let letter = String.fromCharCode(65+idx);
+            let div = document.createElement("div");
+            div.className = "option";
+            if (saved === letter) div.classList.add("selected");
+            div.innerHTML = `<span class="opt-prefix">${letter}</span><span class="opt-text">${opt.substring(2)}</span>`;
+            div.onclick = () => { selectOption(letter); };
+            container.appendChild(div);
+        });
+        document.getElementById("currentQNum").innerText = `第${currentIndex+1}题`;
+        let percent = ((currentIndex+1)/18)*100;
+        document.getElementById("progressFill").style.width = `${percent}%`;
+        document.getElementById("prevBtn").disabled = (currentIndex === 0);
+    }
+    function selectOption(letter) { userAnswers[currentIndex] = letter; recomputeScores(); renderCurrent(); }
+    function next() { if (!userAnswers[currentIndex]) { alert("请选择一个选项"); return; } if (currentIndex+1 < 18) { currentIndex++; renderCurrent(); } else finishQuiz(); }
+    function prev() { if (currentIndex>0) { currentIndex--; renderCurrent(); } }
+    function resetTest() { scores = Object.fromEntries(INSTITUTES.map(i=>[i,0])); userAnswers = new Array(18).fill(null); currentIndex = 0; document.getElementById("quizPanel").style.display = "block"; document.getElementById("resultPanel").style.display = "none"; renderCurrent(); recomputeScores(); }
+
+    document.getElementById("nextBtn").addEventListener("click", next);
+    document.getElementById("prevBtn").addEventListener("click", prev);
+    renderCurrent();
+    recomputeScores();
+</script>
+</body>
+</html>
